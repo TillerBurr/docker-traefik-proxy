@@ -1,30 +1,34 @@
 version: "3"
 
 services:
-  reverse-proxy:
-    # The official v2 Traefik docker image
-    image: traefik:v2.6
-    # Enables the web UI and tells Traefik to listen to docker
-    command:
-      - --api.insecure=true
-      - --providers.docker
-      - --entrypoints.http.address=:80
-      - --entrypoints.email.address=:1025
-      # - --entrypoints.analytics_backend.address=:8001
-    labels:
-      - traefik.enable=false
-    #   - "traefik.http.routers.analytics_backend.rule=Host(`analytics.localhost`)"
-    #   - "traefik.http.services.analytics_backend.loadbalancer.server.port=8001"
-    ports:
-      # The HTTP port
-      - "80:80"
-      # The Web UI (enabled by --api.insecure=true)
-      - "8080:8080"
-    volumes:
-      # So that Traefik can listen to the Docker events
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - traefik_proxy
-networks:
-  traefik_proxy:
-    external: true
+    reverse-proxy:
+        # The official v2 Traefik docker image
+        image: traefik:v2.6
+        # network_mode: "host"
+        # Enables the web UI and tells Traefik to listen to docker
+        command:
+            - --api.insecure=true
+            - --api.debug=true
+            - --providers.docker
+            - --entrypoints.http.address=:80
+
+        labels:
+            - traefik.enable=true
+            - "traefik.http.routers.reverse-proxy-docker-traefik-proxy.rule=Host(`traefik.localhost`)"
+            - traefik.http.services.reverse-proxy-docker-traefik-proxy.loadbalancer.server.port=8080
+            - "traefik.http.middlewares.test-redirectregex.redirectregex.regex=^http://traefik.localhost"
+            - "traefik.http.middlewares.test-redirectregex.redirectregex.replacement=http://traefik.localhost/dashboard/"
+            - "traefik.http.middlewares.test-stripprefix.stripprefix.prefixes=/dashboard"
+        ports:
+            # The HTTP port
+            - "80:80"
+            # # The Web UI (enabled by --api.insecure=true)
+            - "8080:8080"
+        volumes:
+            # So that Traefik can listen to the Docker events
+            - /var/run/docker.sock:/var/run/docker.sock
+#         networks:
+#             - traefik_proxy
+# networks:
+#     traefik_proxy:
+#         external: true
